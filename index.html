@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数学思维打卡计划表 · 积分兑换版</title>
+    <style>
+        body { font-family: sans-serif; background: #f5f7fb; padding: 8px; margin: 0; }
+        .app { max-width: 480px; margin: 0 auto; }
+        .header { background: #fff; border-radius: 14px; padding: 10px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header h1 { font-size: 1.1rem; margin: 0; }
+        .btn { border: 2px solid #cbd5e1; border-radius: 14px; padding: 5px 10px; font-size: 0.72rem; cursor: pointer; background: white; white-space: nowrap; }
+        .btn.primary { background: #4f5ef7; color: white; border-color: #4f5ef7; }
+        .grade-tabs { display: flex; gap: 4px; background: #fff; border-radius: 14px; padding: 6px 8px; margin-bottom: 8px; }
+        .grade-tab { flex: 1; text-align: center; padding: 6px 4px; border-radius: 10px; font-size: 0.7rem; cursor: pointer; background: #f8fafc; border: 2px solid transparent; user-select: none; }
+        .grade-tab.active { background: #eef1ff; color: #4f5ef7; border-color: #4f5ef7; }
+        .settings { display: flex; gap: 6px; align-items: center; background: #fff; border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; font-size: 0.75rem; flex-wrap: wrap; }
+        .settings input[type="date"] { border: 2px solid #4f5ef7; border-radius: 10px; padding: 5px 8px; font-size: 0.75rem; }
+        .settings input[type="number"] { border: 2px solid #cbd5e1; border-radius: 10px; padding: 4px; width: 42px; text-align: center; }
+        .toggle { display: flex; align-items: center; gap: 4px; font-size: 0.7rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 3px 8px; }
+        .points-bar { background: #fef9c3; border-radius: 14px; padding: 10px 14px; display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: 600; }
+        .gift-section { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 8px; border: 2px solid #cbd5e1; }
+        .gift-row { display: flex; gap: 6px; margin-bottom: 8px; }
+        .gift-row input { flex: 1; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 8px; font-size: 0.8rem; }
+        .gift-row input[type="number"] { width: 65px; flex: 0 0 65px; }
+        .gift-tags { display: flex; flex-wrap: wrap; gap: 8px; min-height: 36px; padding: 8px; border: 2px dashed #cbd5e1; border-radius: 12px; background: #fafbfc; }
+        .gift-tags:empty::after { content: '✍️ 点击礼物即可兑换 (需足够积分)'; color: #94a3b8; font-size: 0.75rem; }
+        .gift-tag { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 6px 12px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: 0.1s; user-select: none; }
+        .gift-tag.redeemed { background: #e2e8f0; border-color: #94a3b8; color: #475569; text-decoration: line-through; cursor: default; opacity: 0.7; }
+        .gift-tag:not(.redeemed):hover { background: #d9f99d; transform: scale(0.98); }
+        .gift-tag .del { cursor: pointer; color: #ef4444; margin-left: 4px; font-weight: bold; background: white; border-radius: 30px; width: 16px; text-align: center; line-height: 12px; font-size: 12px; padding: 2px; }
+        .gift-tag .del:hover { background: #fee2e2; }
+        .filter-row { display: flex; gap: 4px; align-items: center; font-size: 0.7rem; margin-bottom: 8px; flex-wrap: wrap; }
+        .filter-btn { padding: 4px 10px; border-radius: 12px; border: 2px solid #cbd5e1; background: white; cursor: pointer; }
+        .filter-btn.active { background: #4f5ef7; color: white; border-color: #4f5ef7; }
+        .view-btn { padding: 4px 10px; border-radius: 12px; border: 2px solid #cbd5e1; background: white; cursor: pointer; margin-left: 6px; }
+        .view-btn.active { background: #4f5ef7; color: white; border-color: #4f5ef7; }
+
+        .topic-list { display: flex; flex-direction: column; gap: 6px; }
+        .topic-card { background: #fff; border-radius: 14px; border: 2px solid #94a3b8; overflow: hidden; }
+        .topic-card.review { border-left: 4px solid #ef4444; background: #fef2f2; }
+        .topic-card.done-hidden { opacity: 0.45; }
+        .date-row { text-align: left; font-weight: 700; font-size: 0.75rem; color: #1e40af; background: #eff6ff; padding: 8px 12px; border-bottom: 2px solid #bfdbfe; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .print-check-label { display: flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: normal; background: white; padding: 2px 8px; border-radius: 20px; }
+        .topic-title { display: flex; align-items: center; padding: 10px; gap: 6px; border-bottom: 2px solid #f1f5f9; cursor: pointer; }
+        .topic-num { background: #eef1ff; color: #4f5ef7; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.75rem; flex-shrink: 0; }
+        .topic-name-text { flex: 1; font-weight: 600; font-size: 0.85rem; }
+        .status-btn { border: 2px solid #e2e8f0; border-radius: 12px; padding: 3px 7px; font-size: 0.65rem; cursor: pointer; background: #f1f5f9; }
+        .status-btn.review { background: #fee2e2; color: #b91c1c; }
+        .status-btn.done { background: #d1fae5; color: #065f46; }
+        .points-wrapper { display: inline-flex; align-items: center; gap: 4px; background: #f8fafc; padding: 2px 6px; border-radius: 20px; }
+        .points-label { font-size: 0.6rem; font-weight: 500; color: #4f5ef7; }
+        .points-input { width: 42px; border: 2px solid #e2e8f0; border-radius: 8px; padding: 2px; text-align: center; font-size: 0.65rem; }
+        .detail-panel { padding: 8px 10px; background: #fafcfd; border-top: 2px solid #f0f2f5; font-size: 0.7rem; line-height: 1.8; }
+        .step-num { font-weight: 700; color: #4f5ef7; }
+
+        .calendar-view { display: flex; flex-direction: column; gap: 12px; }
+        .month-box { background: #fff; border-radius: 14px; border: 2px solid #94a3b8; overflow: hidden; }
+        .month-box-title { background: #4f5ef7; color: white; padding: 8px 14px; font-weight: 700; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; }
+        .month-print-cb { transform: scale(1.2); margin-right: 6px; }
+        .month-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .month-table th { background: #eff6ff; color: #1e40af; font-weight: 700; font-size: 0.65rem; padding: 5px 2px; border: 1px solid #dbeafe; }
+        .month-table td { border: 1px solid #e2e8f0; padding: 3px 2px; font-size: 0.58rem; height: 48px; width: 14.28%; vertical-align: top; text-align: center; }
+        .month-table td.empty { background: #f9fafb; color: #cbd5e1; }
+        .month-table .day-num { display: inline-block; font-weight: 700; font-size: 0.65rem; color: #475569; background: #f1f5f9; border-radius: 50%; width: 18px; height: 18px; text-align: center; line-height: 18px; margin-bottom: 2px; }
+        .task-dot { display: block; font-size: 0.5rem; padding: 1px 2px; margin: 1px 0; border-radius: 3px; white-space: nowrap; overflow: hidden; }
+        .tc-1 { background:#dbeafe; color:#1e40af; } .tc-2 { background:#d1fae5; color:#065f46; }
+        .tc-3 { background:#fef3c7; color:#92400e; } .tc-4 { background:#e8d5f5; color:#6b21a8; }
+        .tc-5 { background:#fce7f3; color:#9d174d; } .tc-6 { background:#e2e8f0; color:#475569; }
+        .tc-7 { background:#ffedd5; color:#9a3412; } .tc-8 { background:#dcfce7; color:#166534; }
+        .tc-9 { background:#e0e7ff; color:#3730a3; } .tc-10 { background:#fae8ff; color:#86198f; }
+        .tc-11 { background:#ecfeff; color:#155e75; } .tc-12 { background:#fff1f2; color:#9f1239; }
+        .tc-13 { background:#f0fdf4; color:#14532d; } .tc-14 { background:#fff7ed; color:#9a3412; }
+        .tc-15 { background:#f5f3ff; color:#4c1d95; } .tc-16 { background:#fef2f2; color:#991b1b; }
+        .tc-17 { background:#f0f9ff; color:#0c4a6e; } .tc-18 { background:#fdf4ff; color:#701a75; }
+        .tc-19 { background:#fffbeb; color:#78350f; } .tc-20 { background:#ecfdf5; color:#064e3b; }
+        .tc-21 { background:#eef2ff; color:#1e3a8a; } .tc-22 { background:#fefce8; color:#713f12; }
+        .tc-23 { background:#f1f5f9; color:#334155; } .tc-24 { background:#f8fafc; color:#0f172a; }
+        .tc-25 { background:#fdf2f8; color:#831843; } .tc-26 { background:#eff6ff; color:#1e3a8a; }
+        .tc-27 { background:#f9fafb; color:#111827; }
+
+        @media print {
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            body { background: #f5f7fb; padding: 0; }
+            .app { max-width: 100%; }
+            .header, .grade-tabs, .settings, .points-bar .btn, .filter-row,
+            .btn, .status-btn, .points-input, .gift-row input, .gift-tag .del,
+            .view-btn, .month-print-cb, .print-check-label { display: none !important; }
+            .points-bar { background: #fef9c3 !important; border-radius: 14px; padding: 10px 14px; margin-bottom: 8px; font-weight: 600; }
+            .gift-section { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 8px; border: 2px solid #cbd5e1; }
+            .gift-tags { border: 2px dashed #999; min-height: 50px; background: #fafbfc; }
+            .gift-tags:empty::after { content: '手写兑换区'; }
+            .topic-card, .month-box { box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 2px solid #94a3b8; }
+            .topic-card.review { border-left: 4px solid #ef4444; background: #fef2f2; }
+            .date-row { background: #eff6ff !important; color: #1e40af !important; border-bottom: 2px solid #bfdbfe; }
+            .topic-num { background: #eef1ff; color: #4f5ef7; }
+            .topic-title { border-bottom: 2px solid #f1f5f9; }
+            .detail-panel { background: #fafcfd; border-top: 2px solid #f0f2f5; }
+            .step-num { color: #4f5ef7; }
+            .month-box-title { background: #4f5ef7 !important; color: white; }
+            .month-table th { background: #eff6ff; color: #1e40af; }
+            .month-table td.empty { background: #f9fafb; }
+            .day-num { background: #f1f5f9; color: #475569; }
+            .task-dot { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .tc-1 { background:#dbeafe; color:#1e40af; } .tc-2 { background:#d1fae5; color:#065f46; }
+            .tc-3 { background:#fef3c7; color:#92400e; } .tc-4 { background:#e8d5f5; color:#6b21a8; }
+            .tc-5 { background:#fce7f3; color:#9d174d; } .tc-6 { background:#e2e8f0; color:#475569; }
+            .tc-7 { background:#ffedd5; color:#9a3412; } .tc-8 { background:#dcfce7; color:#166534; }
+            .tc-9 { background:#e0e7ff; color:#3730a3; } .tc-10 { background:#fae8ff; color:#86198f; }
+            .tc-11 { background:#ecfeff; color:#155e75; } .tc-12 { background:#fff1f2; color:#9f1239; }
+            .tc-13 { background:#f0fdf4; color:#14532d; } .tc-14 { background:#fff7ed; color:#9a3412; }
+            .tc-15 { background:#f5f3ff; color:#4c1d95; } .tc-16 { background:#fef2f2; color:#991b1b; }
+            .tc-17 { background:#f0f9ff; color:#0c4a6e; } .tc-18 { background:#fdf4ff; color:#701a75; }
+            .tc-19 { background:#fffbeb; color:#78350f; } .tc-20 { background:#ecfdf5; color:#064e3b; }
+            .tc-21 { background:#eef2ff; color:#1e3a8a; } .tc-22 { background:#fefce8; color:#713f12; }
+            .tc-23 { background:#f1f5f9; color:#334155; } .tc-24 { background:#f8fafc; color:#0f172a; }
+            .tc-25 { background:#fdf2f8; color:#831843; } .tc-26 { background:#eff6ff; color:#1e3a8a; }
+            .tc-27 { background:#f9fafb; color:#111827; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="header">
+        <h1>📅 数学思维打卡</h1>
+        <div>
+            <span style="font-size:0.7rem;">⭐<b id="tp">0</b></span>
+            <span style="font-size:0.7rem;color:#ef4444;">🔴<b id="rc">0</b></span>
+            <button class="btn" onclick="printPlan()">🖨打印</button>
+        </div>
+    </div>
+    <div class="grade-tabs">
+        <div class="grade-tab active" data-g="1" onclick="swG('1',this)">1年级</div>
+        <div class="grade-tab" data-g="2" onclick="swG('2',this)">2年级</div>
+        <div class="grade-tab" data-g="3" onclick="swG('3',this)">3年级</div>
+        <div class="grade-tab" data-g="4" onclick="swG('4',this)">4年级</div>
+        <div class="grade-tab" data-g="5" onclick="swG('5',this)">5年级</div>
+        <div class="grade-tab" data-g="6" onclick="swG('6',this)">6年级</div>
+    </div>
+    <div class="settings">
+        <span style="font-weight:700;color:#4f5ef7;">📅 开始日期</span><input type="date" id="sd" value="2026-03-23">
+        | <span style="font-weight:700;color:#4f5ef7;">📝 每专题</span><input type="number" id="dd" value="7" min="3" max="30">天 |
+        <label class="toggle"><input type="checkbox" id="sw">跳过周末</label>
+        <label class="toggle"><input type="checkbox" id="sh" checked>跳过节假日</label>
+        <button class="btn primary" onclick="resetAllCustom()">🔄刷新</button>
+    </div>
+    <div class="points-bar">
+        <span>⭐ 可用积分：<b id="tp2">0</b></span>
+        <button class="btn" onclick="clP()" style="background:#fee2e2;color:#b91c1c;">🗑 清零积分&兑换</button>
+    </div>
+    <div class="gift-section">
+        <div style="font-weight:700;font-size:0.85rem;margin-bottom:8px;">🎁 积分商城 · 点击礼物兑换（扣除当前年级积分）</div>
+        <div class="gift-row">
+            <input type="text" id="gn" placeholder="礼物名称">
+            <input type="number" id="gc" placeholder="积分">
+            <button class="btn primary" onclick="adG()">+添加</button>
+        </div>
+        <div class="gift-tags" id="gl"></div>
+    </div>
+    <div class="filter-row">
+        <span>筛选:</span>
+        <span class="filter-btn active" data-f="all" onclick="seF('all',this)">全部</span>
+        <span class="filter-btn" data-f="review" onclick="seF('review',this)">需巩固</span>
+        <span class="filter-btn" data-f="done" onclick="seF('done',this)">已完成</span>
+        <span>视图:</span>
+        <span class="view-btn active" data-v="list" onclick="swV('list',this)">📋列表</span>
+        <span class="view-btn" data-v="cal" onclick="swV('cal',this)">📅月历</span>
+        <span style="margin-left:auto;color:#94a3b8;" id="fc">显示0个</span>
+    </div>
+    <div id="lc" class="topic-list"></div>
+    <div id="cc" class="calendar-view" style="display:none;"></div>
+</div>
+
+<script>
+// 数据
+var D = {
+ '1':[{n:1,a:'生活中的比一比'},{n:2,a:'100以内数的探秘【初步】'},{n:3,a:'100以内数的探秘【进阶】'},{n:4,a:'100以内的加法计算'},{n:5,a:'100以内的减法计算'},{n:6,a:'加法应用综合'},{n:7,a:'减法应用综合'},{n:8,a:'数学中的比一比'},{n:9,a:'生活中的经济【初步】'},{n:10,a:'神奇的小方块'},{n:11,a:'图形的折剪拼'},{n:12,a:'边边角角'},{n:13,a:'一笔画模型'},{n:14,a:'最短路径探秘'},{n:15,a:'等式谜题'},{n:16,a:'排队问题综合'},{n:17,a:'收集与整理'},{n:18,a:'生活中的可能性'},{n:19,a:'图形规律探秘'},{n:20,a:'数字规律探秘'}],
+ '2':[{n:1,a:'时间的奥秘'},{n:2,a:'乘法应用综合'},{n:3,a:'除法应用综合'},{n:4,a:'有余除法应用综合'},{n:5,a:'探索趣味数阵图'},{n:6,a:'数字与运算符的巧妙搭配'},{n:7,a:'生活中的经济【进阶】'},{n:8,a:'图形的平移、旋转和对称'},{n:9,a:'线段图解题'},{n:10,a:'移多补少综合'},{n:11,a:'间隔模型'},{n:12,a:'周期模型'},{n:13,a:'图形计数模型'},{n:14,a:'树形图'},{n:15,a:'合理搭配'},{n:16,a:'蜗牛爬井'},{n:17,a:'列表法解决问题'},{n:18,a:'等量代换【初步】'},{n:19,a:'数独游戏'},{n:20,a:'扫雷游戏'}],
+ '3':[{n:1,a:'万以内加减法综合'},{n:2,a:'整数加减巧算综合'},{n:3,a:'多位数乘法综合'},{n:4,a:'除数是一位数的除法综合'},{n:5,a:'生活中的长度测量'},{n:6,a:'生活中的质量测量'},{n:7,a:'归一归总法'},{n:8,a:'奇偶数与奇偶性'},{n:9,a:'长方形与正方形的周长综合'},{n:10,a:'长方形与正方形的面积综合'},{n:11,a:'探究和差问题'},{n:12,a:'探究和倍差倍'},{n:13,a:'探究年龄问题'},{n:14,a:'和差倍综合【初步】'},{n:15,a:'和差倍综合【进阶】'},{n:16,a:'包含与排除'},{n:17,a:'方阵模型'},{n:18,a:'植树模型'},{n:19,a:'鸡兔同笼模型一（假设）'},{n:20,a:'加乘原理探秘'},{n:21,a:'统筹与优化【初步】'},{n:22,a:'日历探秘'},{n:23,a:'等量代换【进阶】'},{n:24,a:'幻方数阵'},{n:25,a:'必胜游戏策略'},{n:26,a:'模式谜题'},{n:27,a:'探究还原问题'}],
+ '4':[{n:1,a:'除数是两位数的除法综合'},{n:2,a:'整数乘除法巧算综合'},{n:3,a:'等差数列'},{n:4,a:'等差数列求和'},{n:5,a:'小数加减法综合'},{n:6,a:'错中求解【初步】'},{n:7,a:'购物策略'},{n:8,a:'最佳方案选择'},{n:9,a:'统筹与优化【进阶】'},{n:10,a:'逻辑推理【初步】'},{n:11,a:'创新运算法则'},{n:12,a:'平均数的应用'},{n:13,a:'统计图表【初步】'},{n:14,a:'角度计算方法'},{n:15,a:'多边形的认识'},{n:16,a:'多边形面积计算'},{n:17,a:'图形的折剪拼【进阶】'},{n:18,a:'勾股定理初探'},{n:19,a:'鸡兔同笼模型二（分组）'},{n:20,a:'盈亏模型'},{n:21,a:'抽屉模型'},{n:22,a:'行程问题的知二求一'},{n:23,a:'探究行程中的相遇'},{n:24,a:'探究行程中的追及'},{n:25,a:'探究火车的行驶'},{n:26,a:'探究船的行驶'},{n:27,a:'多次相遇与追及现象'}],
+ '5':[{n:1,a:'小数乘除法综合'},{n:2,a:'小数的巧算综合'},{n:3,a:'方程的解法'},{n:4,a:'因数与倍数综合'},{n:5,a:'公因数与公倍数综合'},{n:6,a:'特殊数的整除特征'},{n:7,a:'余数问题综合'},{n:8,a:'分数加减法运算'},{n:9,a:'分数中的比一比'},{n:10,a:'循环小数的转化'},{n:11,a:'分数乘除法运算'},{n:12,a:'不同进位制的认识'},{n:13,a:'链中求解【进阶】'},{n:14,a:'分段计费策略'},{n:15,a:'方程的应用'},{n:16,a:'逻辑推理【进阶】'},{n:17,a:'溶液浓度问题'},{n:18,a:'长方体与正方体的表面积'},{n:19,a:'长方体与正方体的体积'},{n:20,a:'水中浸物'},{n:21,a:'一半模型'},{n:22,a:'等高模型'},{n:23,a:'等积模型'},{n:24,a:'牛吃草模型【初步】'},{n:25,a:'牛吃草模型【进阶】'},{n:26,a:'环形中的行程问题'},{n:27,a:'可能性与概率问题'}],
+ '6':[{n:1,a:'分数巧算技巧'},{n:2,a:'分数裂项方法'},{n:3,a:'分数的应用【初步】'},{n:4,a:'百分数的应用综合'},{n:5,a:'比例的应用综合'},{n:6,a:'比例的应用综合'},{n:7,a:'圆的周长与面积【初步】'},{n:8,a:'圆的周长与面积【进阶】'},{n:9,a:'组合图形的面积【进阶】'},{n:10,a:'圆柱与圆锥的表面积'},{n:11,a:'圆柱与圆锥的体积'},{n:12,a:'分数的应用【进阶】'},{n:13,a:'工程问题综合'},{n:14,a:'进水出水问题'},{n:15,a:'经济与折扣问题'},{n:16,a:'利率与纳税问题'},{n:17,a:'正反比例解行程问题'},{n:18,a:'统计图表【进阶】'},{n:19,a:'排列组合【初步】'},{n:20,a:'排列组合【进阶】'},{n:21,a:'钟面上的行程问题'},{n:22,a:'最不利原则'},{n:23,a:'风筝模型与蝴蝶模型'},{n:24,a:'燕尾模型'},{n:25,a:'鸟头模型'},{n:26,a:'金字塔模型'},{n:27,a:'沙漏模型'}]
+};
+var H = ['2026-01-01','2026-02-15','2026-02-16','2026-02-17','2026-02-18','2026-04-04','2026-04-05','2026-05-01','2026-05-02','2026-05-03','2026-06-19','2026-09-25','2026-10-01','2026-10-02','2026-10-03'];
+var G='1', V='list', S={}, gifts=[], F='all', MP={}, PrintSel={}, redeems={};
+
+function pD(s){ var p=s.split('-'); return new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2])); }
+function fD(d){ var y=d.getFullYear(); var m=d.getMonth()+1; var da=d.getDate(); return y+'-'+(m<10?'0'+m:m)+'-'+(da<10?'0'+da:da); }
+function iW(d){ return d.getDay()===0||d.getDay()===6; }
+function iH(d){ return H.indexOf(fD(d))!==-1; }
+function iS(d,w,h){ return (w&&iW(d))||(h&&iH(d)); }
+function fV(d,w,h){ var c=new Date(d),i=0; while(iS(c,w,h)&&i<3000){c.setDate(c.getDate()+1);i++;} return c; }
+function cS(s,e,w,h){ var c=0,cur=new Date(s); while(cur<=e){if(!iS(cur,w,h))c++;cur.setDate(cur.getDate()+1);} return c; }
+function aS(s,d,w,h){ var c=new Date(s),cnt=0,i=0; while(cnt<d&&i<5000){if(!iS(c,w,h)){cnt++;if(cnt>=d)break;}c.setDate(c.getDate()+1);i++;} return new Date(c); }
+
+function init(g){
+    if(!S[g]||!Array.isArray(S[g])){
+        var t=D[g], a=[];
+        for(var i=0;i<t.length;i++) a.push({d:7, s:'none', p:0, ex:false, customStart:null, customDays:null});
+        S[g]=a;
+    } else {
+        for(var i=0;i<S[g].length;i++){
+            if(S[g][i].customStart===undefined) S[g][i].customStart=null;
+            if(S[g][i].customDays===undefined) S[g][i].customDays=null;
+        }
+    }
+    if(!PrintSel[g]) PrintSel[g]={};
+    for(var i=0;i<D[g].length;i++) if(PrintSel[g][i]===undefined) PrintSel[g][i]=false;
+    if(!redeems[g]) redeems[g]={};
+    return S[g];
+}
+
+function calc(g){
+    var st=init(g), w=document.getElementById('sw').checked, h=document.getElementById('sh').checked;
+    var ss=document.getElementById('sd').value||'2026-03-23';
+    var s=pD(ss); if(isNaN(s.getTime())) s=new Date();
+    s=fV(s,w,h);
+    var t=D[g], sch=[], cur=new Date(s);
+    for(var i=0;i<t.length;i++){
+        var sti = st[i];
+        var startDate;
+        if(sti.customStart){
+            startDate = pD(sti.customStart);
+            startDate = fV(startDate, w, h);
+        } else { startDate = new Date(cur); }
+        var daysNeeded = (sti.customDays !== null) ? sti.customDays : (parseInt(document.getElementById('dd').value) || 7);
+        var end = aS(startDate, daysNeeded, w, h);
+        var dds=[], dc=new Date(startDate), cnt=0;
+        while(cnt<daysNeeded){ 
+            if(!iS(dc,w,h)){dds.push({date:new Date(dc),dn:cnt+1});cnt++;} 
+            dc.setDate(dc.getDate()+1); 
+        }
+        sch.push({i:i, start:new Date(startDate), end:new Date(end), days:daysNeeded, dds:dds});
+        var nx=new Date(end); nx.setDate(nx.getDate()+1);
+        cur = fV(nx, w, h);
+    }
+    return sch;
+}
+
+function updatePointsUI() {
+    var st = S[G];
+    if(!st) return;
+    var rawTotal = 0;
+    for(var i=0;i<st.length;i++) rawTotal += (st[i].p || 0);
+    var gradeRedeem = redeems[G] || {};
+    var redeemedTotal = 0;
+    for(var id in gradeRedeem) redeemedTotal += gradeRedeem[id].cost;
+    var available = rawTotal - redeemedTotal;
+    if(available < 0) available = 0;
+    document.getElementById('tp').textContent = available;
+    document.getElementById('tp2').textContent = available;
+    var rc=0; for(var i=0;i<st.length;i++){if(st[i].s=='review')rc++;}
+    document.getElementById('rc').textContent=rc;
+}
+
+function rG(){ 
+    var el=document.getElementById('gl'); if(!el) return;
+    var gradeRedeem = redeems[G] || {}, h='';
+    for(var i=0;i<gifts.length;i++){
+        var gft = gifts[i]; var isRedeemed = !!gradeRedeem[gft.id];
+        var cls = isRedeemed ? 'gift-tag redeemed' : 'gift-tag';
+        h+='<span class="'+cls+'" data-id="'+gft.id+'" data-cost="'+gft.cost+'" data-name="'+escapeHtml(gft.name)+'">';
+        h+= gft.name + '('+gft.cost+'分)';
+        h+= '<span class="del" data-delid="'+gft.id+'" onclick="event.stopPropagation(); deG(\''+gft.id+'\')">×</span>';
+        if(!isRedeemed) h+= ' <span style="font-size:0.65rem;">🔘</span>';
+        else h+= ' ✅已兑';
+        h+='</span>';
+    }
+    el.innerHTML = h;
+}
+
+function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m==='&')return '&amp;';if(m==='<')return '&lt;';if(m==='>')return '&gt;';return m;}); }
+
+function redeemGift(giftId, cost, name) {
+    var st = S[G]; if(!st) return false;
+    var rawTotal = 0; for(var i=0;i<st.length;i++) rawTotal += (st[i].p || 0);
+    var gradeRedeem = redeems[G] || {}, used = 0;
+    for(var k in gradeRedeem) used += gradeRedeem[k].cost;
+    var available = rawTotal - used;
+    if(gradeRedeem[giftId]) { alert('这个礼物已经兑换过了！'); return false; }
+    if(available < cost) { alert('积分不足！当前可用积分:'+available+', 需要'+cost); return false; }
+    if(!confirm(`确定用 ${cost} 积分兑换 “${name}” 吗？`)) return false;
+    if(!redeems[G]) redeems[G]={};
+    redeems[G][giftId] = { cost: cost, name: name, ts: Date.now() };
+    save(); updatePointsUI(); rG(); render();
+    return true;
+}
+
+function adG(){ 
+    var n=document.getElementById('gn').value.trim(); 
+    var c=parseInt(document.getElementById('gc').value); 
+    if(!n||isNaN(c)||c<=0)return alert('请填写礼物名称和正数积分');
+    var newId = Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+    gifts.push({id:newId, name:n, cost:c});
+    document.getElementById('gn').value=''; document.getElementById('gc').value=''; 
+    save(); rG(); 
+}
+
+function deG(giftId){
+    if(!confirm('删除礼物后，所有年级兑换记录也会被移除，确定吗？')) return;
+    gifts = gifts.filter(function(g){ return g.id != giftId; });
+    for(var grd in redeems) { if(redeems[grd] && redeems[grd][giftId]) delete redeems[grd][giftId]; }
+    save(); rG(); updatePointsUI(); render();
+}
+
+function clP(){
+    if(!confirm('⚠️ 将清空当前年级所有专题的积分，并清除所有已兑换礼物记录 (仅当前年级)！确定吗？')) return;
+    var st=S[G]; if(st) for(var i=0;i<st.length;i++) st[i].p=0;
+    if(redeems[G]) redeems[G]={};
+    save(); render(); updatePointsUI(); rG();
+}
+
+function togglePrint(g,i,val){ if(!PrintSel[g]) PrintSel[g]={}; PrintSel[g][i]=val; save(); render(); }
+function tMP(k,v){ MP[k]=v; save(); }
+function edT(g,i){
+    var st=S[g]; if(!st) return;
+    var w=document.getElementById('sw').checked, h=document.getElementById('sh').checked;
+    var sch=calc(g); if(!sch[i]) return;
+    var cs=sch[i].start, ce=sch[i].end;
+    var ns=prompt('开始日期 (YYYY-MM-DD)',fD(cs)); if(!ns) return;
+    var ne=prompt('结束日期 (YYYY-MM-DD)',fD(ce)); if(!ne) return;
+    var nst=pD(ns), nend=pD(ne); if(isNaN(nst)||isNaN(nend)){alert('日期格式错误');return;}
+    nst=fV(nst,w,h); nend=fV(nend,w,h);
+    if(nend<nst){alert('结束不能早于开始');return;}
+    var nd=cS(nst,nend,w,h); if(nd<1){alert('没有学习日');return;}
+    if(!confirm('重新排期？')) return;
+    st[i].customStart = fD(nst); st[i].customDays = nd; render();
+}
+function tgE(g,i){ S[g][i].ex=!S[g][i].ex; render(); }
+function cyS(g,i){ var o=['none','review','done']; var c=S[g][i].s; S[g][i].s=o[(o.indexOf(c)+1)%3]; render(); }
+function upP(g,i,v){ S[g][i].p=Math.max(0,parseInt(v)||0); render(); }
+function seF(f,btn){ F=f; var fbs=document.querySelectorAll('.filter-btn'); for(var i=0;i<fbs.length;i++)fbs[i].classList.remove('active'); btn.classList.add('active'); render(); }
+function swV(v,el){ V=v; var vbs=document.querySelectorAll('.view-btn'); for(var i=0;i<vbs.length;i++)vbs[i].classList.remove('active'); el.classList.add('active'); render(); }
+function swG(g,el){ G=g; var tabs=document.querySelectorAll('.grade-tab'); for(var i=0;i<tabs.length;i++)tabs[i].classList.remove('active'); el.classList.add('active'); F='all'; var fbs=document.querySelectorAll('.filter-btn'); for(var j=0;j<fbs.length;j++)fbs[j].classList.toggle('active',j===0); render(); rG(); updatePointsUI(); }
+function resetAllCustom(){ var st = S[G]; if(st) for(var i=0;i<st.length;i++){ st[i].customStart = null; st[i].customDays = null; } render(); }
+
+function rL(){
+    var el=document.getElementById('lc'); if(!el) return;
+    init(G); var st=S[G], t=D[G], sch=calc(G);
+    var h='', vis=0;
+    for(var i=0;i<sch.length;i++){
+        var it=st[i]; if(!it) continue;
+        if(F==='review'&&it.s!=='review') continue;
+        if(F==='done'&&it.s!=='done') continue;
+        vis++;
+        var ss=fD(sch[i].start), ee=fD(sch[i].end);
+        var txt='⚪标记', cls='';
+        if(it.s==='review'){txt='🔴需巩固';cls='review';}
+        if(it.s==='done'){txt='✅完成';cls='done';}
+        var tn=t[i].n;
+        var printChecked = (PrintSel[G] && PrintSel[G][i]) ? true : false;
+        h+='<div class="topic-card '+(it.s==='review'?'review':'')+' '+(it.s==='done'?'done-hidden':'')+'">';
+        h+='<div class="date-row" onclick="edT(\''+G+'\','+i+')"><span>📆 '+ss+' — '+ee+'</span><label class="print-check-label" onclick="event.stopPropagation()"><input type="checkbox" '+(printChecked?'checked':'')+' onchange="togglePrint(\''+G+'\','+i+',this.checked)"> 🖨️打印</label></div>';
+        h+='<div class="topic-title" onclick="tgE(\''+G+'\','+i+')"><span class="topic-num">'+tn+'</span><span class="topic-name-text">专题'+tn+' '+t[i].a+'</span><button class="status-btn '+cls+'" onclick="event.stopPropagation();cyS(\''+G+'\','+i+')">'+txt+'</button><div class="points-wrapper" onclick="event.stopPropagation()"><span class="points-label">⭐积分</span><input class="points-input" type="number" value="'+(it.p||0)+'" min="0" onchange="upP(\''+G+'\','+i+',this.value)"></div></div>';
+        if(it.ex){
+            h+='<div class="detail-panel"><div class="step"><span class="step-num">第一步：</span>观看视频并完成专题'+tn+'的课本并订正</div><div class="step"><span class="step-num">第二步：</span>独立完成专题'+tn+'的思维卷并对照视频纠错，用红笔订正</div><div class="step"><span class="step-num">第三步：</span>复习巩固错题</div></div>';
+        }
+        h+='</div>';
+    }
+    if(vis===0) h='<div style="text-align:center;padding:30px;color:#94a3b8;">📭 没有符合条件的专题</div>';
+    el.innerHTML=h;
+    document.getElementById('fc').textContent='显示'+vis+'个';
+    updatePointsUI();
+}
+
+function rC(){
+    var el=document.getElementById('cc'); if(!el) return;
+    init(G); var sch=calc(G);
+    var map={};
+    for(var i=0;i<sch.length;i++){
+        var s=sch[i], tn=D[G][i].n;
+        for(var d=0;d<s.dds.length;d++){
+            var ds=fD(s.dds[d].date);
+            if(!map[ds]) map[ds]=[];
+            map[ds].push({t:'专题'+tn, c:'tc-'+tn});
+        }
+    }
+    var dates=Object.keys(map).sort();
+    if(dates.length===0){ el.innerHTML='<div style="text-align:center;padding:30px;">暂无学习计划</div>'; return; }
+    var min=pD(dates[0]), max=pD(dates[dates.length-1]);
+    var months=[], cur=new Date(min.getFullYear(),min.getMonth(),1);
+    while(cur<=max){ months.push({y:cur.getFullYear(),m:cur.getMonth()+1}); cur.setMonth(cur.getMonth()+1); }
+    var wds=['日','一','二','三','四','五','六'], h='';
+    for(var m=0;m<months.length;m++){
+        var y=months[m].y, mo=months[m].m;
+        var mk=y+'-'+(mo<10?'0'+mo:mo);
+        if(MP[mk]===undefined) MP[mk]=false;
+        var fd_=new Date(y,mo-1,1), ld=new Date(y,mo,0);
+        var sdow=fd_.getDay(), td=ld.getDate();
+        h+='<div class="month-box"><div class="month-box-title"><span>'+y+'年'+mo+'月</span><label style="font-size:0.65rem;"><input class="month-print-cb" type="checkbox" data-monthkey="'+mk+'" '+(MP[mk]?'checked':'')+' onchange="tMP(\''+mk+'\',this.checked)">打印</label></div>';
+        h+='<table class="month-table"><thead><tr>';
+        for(var w=0;w<7;w++) h+='<th>'+wds[w]+'</th>';
+        h+='</thead><tbody><tr>';
+        for(var c=0;c<sdow;c++) h+='<td class="empty"></td>';
+        var cc=sdow;
+        for(var da=1;da<=td;da++){
+            if(cc>0 && cc%7===0) h+='</tr><tr>';
+            var ds=y+'-'+(mo<10?'0'+mo:mo)+'-'+(da<10?'0'+da:da);
+            var tasks=map[ds]||[];
+            h+='<td class="'+(tasks.length===0?'empty':'')+'">';
+            h+='<span class="day-num">'+da+'</span>';
+            for(var t=0;t<tasks.length;t++){
+                h+='<span class="task-dot '+tasks[t].c+'">'+tasks[t].t+'</span>';
+            }
+            h+='</td>';
+            cc++;
+        }
+        while(cc%7!==0){ h+='<td class="empty"></td>'; cc++; }
+        h+='</tr></tbody></table></div>';
+    }
+    el.innerHTML=h;
+    updatePointsUI();
+}
+
+function render(){
+    if(V==='list'){ document.getElementById('lc').style.display='flex'; document.getElementById('cc').style.display='none'; rL(); }
+    else { document.getElementById('lc').style.display='none'; document.getElementById('cc').style.display='flex'; rC(); }
+    save();
+}
+
+function save(){ 
+    try{ 
+        localStorage.setItem('mp_gs',JSON.stringify(S)); 
+        localStorage.setItem('mp_gf',JSON.stringify(gifts)); 
+        localStorage.setItem('mp_v',V); 
+        localStorage.setItem('mp_mp',JSON.stringify(MP)); 
+        localStorage.setItem('mp_ps',JSON.stringify(PrintSel));
+        localStorage.setItem('mp_redeems',JSON.stringify(redeems));
+    }catch(e){} 
+}
+
+function load(){ 
+    try{ 
+        var gs=localStorage.getItem('mp_gs'); if(gs)S=JSON.parse(gs); 
+        var gf=localStorage.getItem('mp_gf'); if(gf)gifts=JSON.parse(gf); 
+        var v=localStorage.getItem('mp_v'); if(v)V=v; 
+        MP = {};
+        var ps=localStorage.getItem('mp_ps'); if(ps)PrintSel=JSON.parse(ps);
+        var rd=localStorage.getItem('mp_redeems'); if(rd) redeems=JSON.parse(rd);
+        else redeems={};
+        if(gifts.length && gifts[0] && !gifts[0].id) {
+            gifts = gifts.map(function(g,idx){ return { id: 'legacy_'+Date.now()+'_'+idx, name: g.name, cost: g.cost }; });
+        }
+        for(var gk in S) if(!redeems[gk]) redeems[gk]={};
+    }catch(e){} 
+    init(G); 
+}
+
+function printPlan(){
+    if(V==='list'){
+        var cards = document.querySelectorAll('#lc .topic-card');
+        var originalDisplay = [];
+        for(var i=0;i<cards.length;i++){
+            originalDisplay.push(cards[i].style.display);
+            var cb = cards[i].querySelector('.print-check-label input');
+            if(cb && !cb.checked) cards[i].style.display = 'none';
+        }
+        setTimeout(function(){
+            window.print();
+            setTimeout(function(){ for(var j=0;j<cards.length;j++) cards[j].style.display = originalDisplay[j] || ''; render(); },300);
+        },150);
+    } else {
+        var secs=document.querySelectorAll('#cc .month-box');
+        var keys=Object.keys(MP);
+        for(var m=0;m<secs.length;m++){ if(keys[m]&&!MP[keys[m]]) secs[m].style.display='none'; }
+        setTimeout(function(){ window.print(); setTimeout(function(){ for(var n=0;n<secs.length;n++)secs[n].style.display=''; render(); },300); },150);
+    }
+}
+
+document.getElementById('gl') && document.getElementById('gl').addEventListener('click', function(e) {
+    var target = e.target.closest('.gift-tag');
+    if(!target) return;
+    if(target.classList.contains('redeemed')) { e.stopPropagation(); return; }
+    var delBtn = e.target.closest('.del');
+    if(delBtn) return;
+    var giftId = target.getAttribute('data-id');
+    var cost = parseInt(target.getAttribute('data-cost'));
+    var name = target.getAttribute('data-name');
+    if(giftId && !isNaN(cost)) {
+        e.stopPropagation();
+        redeemGift(giftId, cost, name);
+    }
+});
+
+load(); init(G); render(); rG(); updatePointsUI();
+</script>
+</body>
+</html>
